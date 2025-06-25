@@ -178,6 +178,124 @@ docker compose logs -f nginx
 2. Check both Keycloak and Rocket.Chat logs
 3. Verify redirect URLs match exactly
 
+## Keycloak Debugging Journey
+
+### The Problem
+When first deploying Keycloak, the admin console at http://109.237.71.25:3000/keycloak/admin would load indefinitely showing "Loading the Administration Console" and then display "somethingWentWrong" error.
+
+### Root Causes Identified
+
+1. **Service Name Mismatch**
+   - nginx.conf referenced `rocketchat-keycloak:8080`
+   - Docker container actually named service as `keycloak`
+   - Fixed by updating nginx upstream to use `keycloak:8080`
+
+2. **Missing Port in Keycloak URLs**
+   - Keycloak's admin console JavaScript had `authServerUrl: "http://109.237.71.25/keycloak"` (missing :3000)
+   - This prevented API calls from working correctly
+   - Browser console showed resources loading but console not initializing
+
+3. **HTTPS Requirement in Development**
+   - Initial configuration used `KC_PROXY: edge` which enforces HTTPS
+   - API calls to `/keycloak/realms/master/.well-known/openid-configuration` returned 403 "HTTPS required"
+   - Changed to `KC_PROXY: passthrough` didn't help
+
+4. **Nginx Path Handling**
+   - Requests to `/keycloak` (without trailing slash) redirected incorrectly
+   - Added explicit redirect: `location = /keycloak { return 301 http://109.237.71.25:3000/keycloak/; }`
+
+### Debugging Steps
+
+1. **Checked Service Connectivity**
+   ```bash
+   # From nginx container to Keycloak
+   docker exec rocketchat-nginx curl http://keycloak:8080/keycloak/admin
+   # Returned 302 redirect - service was running
+   ```
+
+2. **Analyzed Request Flow**
+   ```
+   Browser → NAT (109.237.71.25:3000) → Nginx (port 80) → Keycloak (port 8080)
+   ```
+
+3. **Examined Keycloak Environment Configuration**
+   ```bash
+   curl -s http://109.237.71.25:3000/keycloak/admin/master/console/ | grep authServerUrl
+   # Showed URLs missing port 3000
+   ```
+
+4. **Tested OIDC Endpoints**
+   ```bash
+   curl http://109.237.71.25:3000/keycloak/realms/master/.well-known/openid-configuration
+   # Initially returned "HTTPS required" error
+   ```
+
+### Final Solution
+
+1. **Simplified Keycloak Configuration** (docker-compose.keycloak.yml):
+   ```yaml
+   environment:
+     # Development mode settings
+     KC_HTTP_ENABLED: true
+     KC_HTTP_RELATIVE_PATH: /keycloak
+     KC_HTTP_PORT: 8080
+     KC_HOSTNAME_STRICT: false
+     KC_HOSTNAME_STRICT_HTTPS: false
+   command: start-dev --http-relative-path=/keycloak
+   ```
+
+2. **Fixed Nginx Configuration** (nginx-keycloak.conf):
+   ```nginx
+   # Correct service name
+   upstream keycloak_backend {
+       server keycloak:8080;
+   }
+   
+   # Handle path without trailing slash
+   location = /keycloak {
+       return 301 http://109.237.71.25:3000/keycloak/;
+   }
+   
+   # Main Keycloak proxy
+   location /keycloak/ {
+       proxy_pass http://keycloak_backend/keycloak/;
+       proxy_set_header Host $http_host;
+       proxy_set_header X-Forwarded-Host 109.237.71.25:3000;
+       # ... other headers
+   }
+   ```
+
+3. **Removed Complex Proxy Settings**
+   - Eliminated `KC_PROXY`, `KC_PROXY_HEADERS` settings
+   - Let Keycloak run in simple dev mode
+   - Avoided HTTPS enforcement issues
+
+### Key Learnings
+
+1. **Always verify service names match between Docker and nginx**
+2. **Check browser console for JavaScript errors - not just network tab**
+3. **Test API endpoints directly to identify authentication/HTTPS issues**
+4. **Simplify configuration for development - avoid production proxy settings**
+5. **Use explicit path redirects in nginx for better control**
+6. **The NAT setup requires careful attention to port preservation in URLs**
+
+### Verification Commands
+
+```bash
+# Test OIDC discovery endpoint
+curl -s http://109.237.71.25:3000/keycloak/realms/master/.well-known/openid-configuration | jq .
+
+# Check Keycloak admin login from inside container
+docker exec rocketchat-keycloak /opt/keycloak/bin/kcadm.sh config credentials \
+  --server http://localhost:8080/keycloak --realm master --user admin --password KeycloakAdmin123!
+
+# Monitor nginx access logs
+docker logs -f rocketchat-nginx
+
+# Check Keycloak startup logs
+docker compose -f docker-compose.yml -f docker-compose.keycloak.yml logs keycloak --tail 50
+```
+
 ## Emergency Procedures
 
 ### Full Reset

@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # MongoDB Replica Set
+  # MongoDB Replica Set (without authentication for simpler setup)
   mongodb-primary:
     image: mongo:5.0
     container_name: mongodb-primary
@@ -9,13 +7,8 @@ services:
     command: mongod --replSet rs0 --bind_ip_all
     volumes:
       - mongo_primary_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - rocketchat-network
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: rocketchat123
-      MONGO_INITDB_DATABASE: rocketchat
 
   mongodb-secondary1:
     image: mongo:5.0
@@ -46,8 +39,8 @@ services:
     image: rocket.chat:latest
     restart: unless-stopped
     environment:
-      MONGO_URL: mongodb://root:rocketchat123@mongodb-primary:27017,mongodb-secondary1:27017,mongodb-secondary2:27017/rocketchat?replicaSet=rs0&authSource=admin
-      MONGO_OPLOG_URL: mongodb://root:rocketchat123@mongodb-primary:27017,mongodb-secondary1:27017,mongodb-secondary2:27017/local?replicaSet=rs0&authSource=admin
+      MONGO_URL: mongodb://mongodb-primary:27017,mongodb-secondary1:27017,mongodb-secondary2:27017/rocketchat?replicaSet=rs0
+      MONGO_OPLOG_URL: mongodb://mongodb-primary:27017,mongodb-secondary1:27017,mongodb-secondary2:27017/local?replicaSet=rs0
       ROOT_URL: ${ROOT_URL:-http://localhost}
       PORT: 3000
       DEPLOY_METHOD: docker

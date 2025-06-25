@@ -24,22 +24,4 @@ try {
   print('Replica set initialized successfully');
 }
 
-// Create rocketchat database and user
-db = db.getSiblingDB('admin');
-db.auth('root', 'rocketchat123');
-
-// Check if database exists
-if (!db.getMongo().getDBNames().includes('rocketchat')) {
-  db = db.getSiblingDB('rocketchat');
-  db.createUser({
-    user: 'rocketchat',
-    pwd: 'rocketchat123',
-    roles: [
-      { role: 'readWrite', db: 'rocketchat' },
-      { role: 'read', db: 'local' }
-    ]
-  });
-  print('Rocket.Chat database and user created');
-}
-
 print('MongoDB initialization complete');

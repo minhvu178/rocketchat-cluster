@@ -23,8 +23,9 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: false
       KC_HTTP_ENABLED: true
       KC_HTTP_RELATIVE_PATH: /keycloak
-      KC_HOSTNAME_URL: http://109.237.71.25:3000/keycloak
-      KC_HOSTNAME_ADMIN_URL: http://109.237.71.25:3000/keycloak
+      KC_HOSTNAME: 109.237.71.25:3000
+      KC_HOSTNAME_PATH: /keycloak
+      KC_HOSTNAME_ADMIN: 109.237.71.25:3000
       
       # For development - remove in production
       KC_HOSTNAME_DEBUG: true

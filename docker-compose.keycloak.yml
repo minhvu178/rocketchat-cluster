@@ -24,9 +24,6 @@ services:
       KC_HOSTNAME_STRICT: false
       KC_HOSTNAME_STRICT_HTTPS: false
       
-      # For development - remove in production
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: KeycloakAdmin123!
     command: start-dev --http-relative-path=/keycloak
     networks:
       - rocketchat-network

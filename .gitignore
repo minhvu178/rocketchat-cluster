@@ -1,0 +1,36 @@
+# Environment variables
+.env
+
+# SSL certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# Docker volumes
+mongo_*_data/
+redis_data/
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.backup
+*.dump
+backup/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

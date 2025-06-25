@@ -51,8 +51,16 @@ services:
       OVERWRITE_SETTING_Register_Server: "false"
       OVERWRITE_SETTING_Cloud_Enable: "false"
       OVERWRITE_SETTING_Cloud_Service_Agree_PrivacyTerms: "false"
-      OVERWRITE_SETTING_Setup_Wizard: "completed"
-      OVERWRITE_SETTING_Show_Setup_Wizard: "completed"
+      
+      # Remove wizard bypass to allow proper setup
+      # OVERWRITE_SETTING_Setup_Wizard: "completed"
+      # OVERWRITE_SETTING_Show_Setup_Wizard: "completed"
+      
+      # Initial admin account (only works on first run)
+      INITIAL_USER: "true"
+      ADMIN_USERNAME: admin
+      ADMIN_PASS: RocketAdmin123!
+      ADMIN_EMAIL: admin@rocketchat.local
       
       # Disable cloud-dependent features
       OVERWRITE_SETTING_Push_enable: "false"

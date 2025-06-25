@@ -4,7 +4,7 @@ This guide will help you test OAuth authentication with your Rocket.Chat cluster
 
 ## Prerequisites
 
-- Admin access to your Rocket.Chat instance (http://109.237.71.25)
+- Admin access to your Rocket.Chat instance (http://109.237.71.25:3000)
 - Developer account on the OAuth provider (GitHub, Google, or GitLab)
 - Access to create OAuth applications
 
@@ -16,8 +16,8 @@ This guide will help you test OAuth authentication with your Rocket.Chat cluster
 2. Click "OAuth Apps" → "New OAuth App"
 3. Fill in the details:
    - **Application name**: Rocket.Chat Test
-   - **Homepage URL**: http://109.237.71.25
-   - **Authorization callback URL**: http://109.237.71.25/_oauth/github
+   - **Homepage URL**: http://109.237.71.25:3000
+   - **Authorization callback URL**: http://109.237.71.25:3000/_oauth/github
 4. Click "Register application"
 5. Copy the **Client ID** and generate a **Client Secret**
 
@@ -55,8 +55,8 @@ This guide will help you test OAuth authentication with your Rocket.Chat cluster
    - Application type: **Web application**
    - Name: Rocket.Chat Test
    - Authorized redirect URIs: 
-     - http://109.237.71.25/_oauth/google
-     - http://109.237.71.25/_oauth/google/callback
+     - http://109.237.71.25:3000/_oauth/google
+     - http://109.237.71.25:3000/_oauth/google/callback
 5. Copy **Client ID** and **Client Secret**
 
 ### Step 2: Configure in Rocket.Chat
@@ -78,7 +78,7 @@ This guide will help you test OAuth authentication with your Rocket.Chat cluster
 2. Click "New Application"
 3. Fill in:
    - **Name**: Rocket.Chat Test
-   - **Redirect URI**: http://109.237.71.25/_oauth/gitlab
+   - **Redirect URI**: http://109.237.71.25:3000/_oauth/gitlab
    - **Scopes**: Select `read_user`, `openid`, `profile`, `email`
 4. Click "Save application"
 5. Copy **Application ID** and **Secret**
@@ -142,9 +142,9 @@ To test the cluster's OAuth handling:
 
 ```bash
 # Check OAuth endpoints are accessible
-curl -I http://109.237.71.25/_oauth/github
-curl -I http://109.237.71.25/_oauth/google
-curl -I http://109.237.71.25/_oauth/gitlab
+curl -I http://109.237.71.25:3000/_oauth/github
+curl -I http://109.237.71.25:3000/_oauth/google
+curl -I http://109.237.71.25:3000/_oauth/gitlab
 
 # Check cluster health
 ssh -p 2222 -i ~/.ssh/stg root@109.237.71.25 "cd /root/rocketchat-cluster && docker compose ps"

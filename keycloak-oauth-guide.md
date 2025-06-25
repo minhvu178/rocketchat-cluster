@@ -12,7 +12,7 @@ This guide will help you integrate Keycloak as an OAuth provider for your Rocket
 ## Step 1: Create Keycloak Client
 
 ### 1.1 Login to Keycloak Admin Console
-- Access your Keycloak admin console at http://109.237.71.25:3000/auth/admin
+- Access your Keycloak admin console at http://109.237.71.25:3000/keycloak/admin
 - Select your realm or create a new one named "rocketchat-realm"
 
 ### 1.2 Create New Client
@@ -52,7 +52,7 @@ After adding, refresh the page and configure these settings:
 
 **Basic Settings:**
 - **Enable**: `True`
-- **URL**: `http://109.237.71.25:3000/auth` (using Nginx proxy)
+- **URL**: `http://109.237.71.25:3000/keycloak` (using Nginx proxy)
 - **Token Path**: `/realms/rocketchat-realm/protocol/openid-connect/token`
 - **Token Sent Via**: `Header`
 - **Identity Token Sent Via**: `Same as Token Sent Via`
@@ -144,9 +144,9 @@ docker compose restart nginx
 ```
 
 ### 5.3 Access URLs
-- **Keycloak Admin**: http://109.237.71.25:3000/auth/admin
+- **Keycloak Admin**: http://109.237.71.25:3000/keycloak/admin
 - **Rocket.Chat**: http://109.237.71.25:3000
-- Both services are accessible through the same port!
+- Both services are accessible through the same port without path conflicts!
 
 ## Troubleshooting
 
@@ -159,8 +159,8 @@ docker compose restart nginx
 - Ensure the client access type is set to "confidential"
 
 ### Issue: Connection refused
-- Since we're using Nginx proxy, ensure the URL is set to `http://109.237.71.25:3000/auth`
-- If configuring from inside Docker network, use `http://nginx/auth`
+- Since we're using Nginx proxy, ensure the URL is set to `http://109.237.71.25:3000/keycloak`
+- If configuring from inside Docker network, use `http://nginx/keycloak`
 - Do NOT use `http://keycloak:8080/auth` directly as port 8080 is not exposed
 
 ### Issue: User authenticated but not logged into Rocket.Chat
@@ -176,7 +176,7 @@ You can also configure Keycloak OAuth via environment variables in docker-compos
 environment:
   # Keycloak OAuth
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak: "true"
-  OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-url: "http://nginx/auth"
+  OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-url: "http://nginx/keycloak"
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-token_path: "/realms/rocketchat-realm/protocol/openid-connect/token"
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-identity_path: "/realms/rocketchat-realm/protocol/openid-connect/userinfo"
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-authorize_path: "/realms/rocketchat-realm/protocol/openid-connect/auth"

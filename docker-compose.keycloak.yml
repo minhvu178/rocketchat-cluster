@@ -26,10 +26,9 @@ services:
       # For development - remove in production
       KC_HOSTNAME_DEBUG: true
     command: start-dev  # Use 'start' for production
-    ports:
-      - "8080:8080"
     networks:
       - rocketchat-network
+    # No port mapping needed - accessed through Nginx proxy
     depends_on:
       - keycloak-db
 

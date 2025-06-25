@@ -12,7 +12,7 @@ This guide will help you integrate Keycloak as an OAuth provider for your Rocket
 ## Step 1: Create Keycloak Client
 
 ### 1.1 Login to Keycloak Admin Console
-- Access your Keycloak admin console (usually http://your-keycloak:8080/auth/admin)
+- Access your Keycloak admin console at http://109.237.71.25:3000/auth/admin
 - Select your realm or create a new one named "rocketchat-realm"
 
 ### 1.2 Create New Client
@@ -52,7 +52,7 @@ After adding, refresh the page and configure these settings:
 
 **Basic Settings:**
 - **Enable**: `True`
-- **URL**: `http://your-keycloak-server:8080/auth` (replace with your Keycloak URL)
+- **URL**: `http://109.237.71.25:3000/auth` (using Nginx proxy)
 - **Token Path**: `/realms/rocketchat-realm/protocol/openid-connect/token`
 - **Token Sent Via**: `Header`
 - **Identity Token Sent Via**: `Same as Token Sent Via`
@@ -121,27 +121,32 @@ In Rocket.Chat OAuth settings:
 - **Roles/Groups Path for Callback**: `groups`
 - **Merge Roles from SSO**: `True`
 
-## Step 5: Docker Compose Example for Keycloak
+## Step 5: Deploy Keycloak with Nginx Proxy
 
-If you need to deploy Keycloak alongside Rocket.Chat:
+Since we're using NAT with only port 3000 exposed, Keycloak must be accessed through the same port via Nginx proxy.
 
-```yaml
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: keycloak
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin123
-      KC_PROXY: edge
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_HTTP_ENABLED: true
-    command: start-dev
-    ports:
-      - "8080:8080"
-    networks:
-      - rocketchat-network
+### 5.1 Update Nginx Configuration
+Replace the default nginx.conf with nginx-keycloak.conf to proxy both services:
+
+```bash
+# Backup original and use new config
+mv nginx.conf nginx.conf.bak
+cp nginx-keycloak.conf nginx.conf
 ```
+
+### 5.2 Deploy Keycloak
+```bash
+# Deploy with the Keycloak compose file
+docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up -d
+
+# Restart Nginx to load new configuration
+docker compose restart nginx
+```
+
+### 5.3 Access URLs
+- **Keycloak Admin**: http://109.237.71.25:3000/auth/admin
+- **Rocket.Chat**: http://109.237.71.25:3000
+- Both services are accessible through the same port!
 
 ## Troubleshooting
 
@@ -154,9 +159,9 @@ If you need to deploy Keycloak alongside Rocket.Chat:
 - Ensure the client access type is set to "confidential"
 
 ### Issue: Connection refused
-- If using Docker, ensure Keycloak container is on the same network
-- Use the container name instead of localhost
-- Example: `http://keycloak:8080/auth` instead of `http://localhost:8080/auth`
+- Since we're using Nginx proxy, ensure the URL is set to `http://109.237.71.25:3000/auth`
+- If configuring from inside Docker network, use `http://nginx/auth`
+- Do NOT use `http://keycloak:8080/auth` directly as port 8080 is not exposed
 
 ### Issue: User authenticated but not logged into Rocket.Chat
 - Check username field mapping (try `sub` if `preferred_username` doesn't work)
@@ -171,7 +176,7 @@ You can also configure Keycloak OAuth via environment variables in docker-compos
 environment:
   # Keycloak OAuth
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak: "true"
-  OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-url: "http://keycloak:8080/auth"
+  OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-url: "http://nginx/auth"
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-token_path: "/realms/rocketchat-realm/protocol/openid-connect/token"
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-identity_path: "/realms/rocketchat-realm/protocol/openid-connect/userinfo"
   OVERWRITE_SETTING_Accounts_OAuth_Custom-Keycloak-authorize_path: "/realms/rocketchat-realm/protocol/openid-connect/auth"
